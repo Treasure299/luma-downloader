@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { exec } = require("child_process");
+const path = require("path");
 
 const app = express();
 app.use(cors());
@@ -19,8 +20,11 @@ app.post("/download", async (req, res) => {
     return res.status(400).json({ error: "No URL provided" });
   }
 
-  // IMPORTANT: we are using ./yt-dlp because Render does not register global installs
-  const command = `./yt-dlp -f best -o output.mp4 "${url}"`;
+  // Path to your cookies.txt file (make sure this file exists in your project directory)
+  const cookiesPath = path.join(__dirname, 'cookies.txt');
+  
+  // Update the yt-dlp command with the delay and cookies
+  const command = `./yt-dlp --sleep-interval 1 --max-sleep-interval 5 --cookies ${cookiesPath} -f best -o output.mp4 "${url}"`;
 
   exec(command, (err, stdout, stderr) => {
     if (err) {
