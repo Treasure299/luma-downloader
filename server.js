@@ -1,56 +1,38 @@
-const express = require("express");
-const cors = require("cors");
-const { exec } = require("child_process");
-const path = require("path");
+const { exec } = require('child_process');
+const path = require('path');
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const downloadVideo = (url) => {
+  return new Promise((resolve, reject) => {
+    // Path to cookies.txt
+    const cookiesPath = path.join(__dirname, 'cookies.txt');
 
-// Health check route
-app.get("/", (req, res) => {
-  res.send("Luma Downloader API is running 🚀");
-});
+    // yt-dlp command to download the video with cookies and sleep interval to avoid rate limits
+    const command = `./yt-dlp --sleep-interval 1 --max-sleep-interval 5 --cookies ${cookiesPath} -f best -o output.mp4 "${url}"`;
 
-// Download endpoint
-app.post("/download", async (req, res) => {
-  const { url } = req.body;
+    exec(command, (err, stdout, stderr) => {
+      if (err) {
+        console.error('YT-DLP ERROR:', err);
+        console.error('STDERR:', stderr);
+        return reject({
+          error: err.message || err.toString(),
+          details: stderr || 'No stderr output',
+        });
+      }
 
-  if (!url) {
-    return res.status(400).json({ error: "No URL provided" });
-  }
+      // Now that the download is complete, parse the stdout to get metadata
+      // For example, capture title from yt-dlp's stdout, you can adjust this parsing to your needs
+      const videoData = {
+        success: true,
+        videoUrl: 'https://your-cloudflare-r2-bucket-url/output.mp4', // Replace with actual R2 storage URL
+        title: "Extracted Title Here",  // Extract title from yt-dlp or use default title
+        platform: "Instagram", // Hardcoded or extracted based on the platform
+        originalUrl: url,  // Use the original URL
+        status: 'completed',
+      };
 
-  // Path to your cookies.txt file (make sure this file exists in your project directory)
-  const cookiesPath = path.join(__dirname, 'cookies.txt');
-  
-  // Update the yt-dlp command with the delay and cookies
-  const command = `./yt-dlp --sleep-interval 1 --max-sleep-interval 5 --cookies ${cookiesPath} -f best -o output.mp4 "${url}"`;
-
-  exec(command, (err, stdout, stderr) => {
-    if (err) {
-      // 🔥 THIS IS THE IMPORTANT FIX (REAL ERROR OUTPUT)
-      console.error("YT-DLP ERROR:", err);
-      console.error("STDERR:", stderr);
-
-      return res.status(500).json({
-        error: err.message || err.toString(),
-        details: stderr || "No stderr output",
-      });
-    }
-
-    console.log("YT-DLP OUTPUT:", stdout);
-
-    return res.json({
-      success: true,
-      message: "Download completed",
-      output: stdout,
+      // Log and return the result to Luma
+      console.log('YT-DLP OUTPUT:', stdout);
+      return resolve(videoData); // Return parsed data
     });
   });
-});
-
-// Start server
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+};
