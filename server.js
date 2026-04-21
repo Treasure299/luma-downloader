@@ -25,7 +25,7 @@ app.post("/download", (req, res) => {
 
   exec(command, (error) => {
     if (error) {
-      return res.status(500).json({ error: "Download failed" });
+      return res.status(500).json({ error: err.message || err.toString() });
     }
 
     res.download(filepath, () => {
