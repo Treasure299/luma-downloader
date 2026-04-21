@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: luma-downloader
+    env: node
+    buildCommand: |
+      apt-get update && apt-get install -y yt-dlp
+      npm install
+    startCommand: npm start
