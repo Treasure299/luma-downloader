@@ -1,12 +1,15 @@
+const express = require('express');
 const { exec } = require('child_process');
 const path = require('path');
 
+const app = express();
+app.use(express.json());
+
+// 🔹 Download Function
 const downloadVideo = (url) => {
   return new Promise((resolve, reject) => {
-    // Path to cookies.txt
     const cookiesPath = path.join(__dirname, 'cookies.txt');
 
-    // yt-dlp command to download the video with cookies and sleep interval to avoid rate limits
     const command = `./yt-dlp --sleep-interval 1 --max-sleep-interval 5 --cookies ${cookiesPath} -f best -o output.mp4 "${url}"`;
 
     exec(command, (err, stdout, stderr) => {
@@ -19,20 +22,53 @@ const downloadVideo = (url) => {
         });
       }
 
-      // Now that the download is complete, parse the stdout to get metadata
-      // For example, capture title from yt-dlp's stdout, you can adjust this parsing to your needs
-      const videoData = {
-        success: true,
-        videoUrl: 'https://your-cloudflare-r2-bucket-url/output.mp4', // Replace with actual R2 storage URL
-        title: "Extracted Title Here",  // Extract title from yt-dlp or use default title
-        platform: "Instagram", // Hardcoded or extracted based on the platform
-        originalUrl: url,  // Use the original URL
-        status: 'completed',
-      };
-
-      // Log and return the result to Luma
       console.log('YT-DLP OUTPUT:', stdout);
-      return resolve(videoData); // Return parsed data
+
+      resolve({
+        success: true,
+        message: "Download completed",
+        output: stdout,
+        fileName: "output.mp4"
+      });
     });
   });
 };
+
+// 🔹 API Route
+app.post('/download', async (req, res) => {
+  const { url } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ error: "No URL provided" });
+  }
+
+  try {
+    const result = await downloadVideo(url);
+
+    // ⚠️ TEMP: No R2 yet
+    res.json({
+      success: true,
+      message: result.message,
+      file: result.fileName
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: err.error || "Download failed",
+      details: err.details
+    });
+  }
+});
+
+// 🔹 Health Check
+app.get('/', (req, res) => {
+  res.send("Luma API is running 🚀");
+});
+
+// 🔹 IMPORTANT: Render Port
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
