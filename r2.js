@@ -4,8 +4,8 @@ const fs = require("fs");
 const accountId = process.env.R2_ACCOUNT_ID;
 const bucket = process.env.R2_BUCKET_NAME;
 
-console.log("R2_BUCKET:", bucket);
-console.log("R2_ACCOUNT_ID:", accountId);
+console.log("R2 INIT → bucket:", bucket);
+console.log("R2 INIT → accountId:", accountId);
 
 const s3 = new S3Client({
   region: "auto",
@@ -36,9 +36,9 @@ async function uploadToR2(filePath, fileName) {
 
   console.log("R2 UPLOAD SUCCESS");
 
-  // ✅ FIXED: Direct R2 endpoint (works without public bucket / r2.dev)
+  // ✅ THIS is the correct PUBLIC URL format (your working r2.dev domain)
   return {
-    url: `https://${accountId}.r2.cloudflarestorage.com/${bucket}/${fileName}`
+    url: `https://pub-5e5fc7bf63f54f2ca5560ab1efb76479.r2.dev/${fileName}`
   };
 }
 
