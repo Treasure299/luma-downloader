@@ -20,7 +20,11 @@ function downloadVideo(url) {
       }
 
       console.log("DOWNLOAD COMPLETE");
-      console.log("FILE EXISTS:", fs.existsSync(filePath));
+
+      // 🔍 check file exists before upload
+      if (!fs.existsSync(filePath)) {
+        return reject(new Error("File was not created on server"));
+      }
 
       try {
         console.log("STARTING R2 UPLOAD NOW...");
@@ -28,6 +32,14 @@ function downloadVideo(url) {
         const uploadResult = await uploadToR2(filePath, fileName);
 
         console.log("UPLOAD DONE");
+
+        // 🧹 CLEANUP STEP (IMPORTANT)
+        try {
+          fs.unlinkSync(filePath);
+          console.log("LOCAL FILE DELETED (CLEANUP SUCCESS)");
+        } catch (cleanupErr) {
+          console.log("CLEANUP FAILED (non-blocking):", cleanupErr.message);
+        }
 
         resolve({
           success: true,
