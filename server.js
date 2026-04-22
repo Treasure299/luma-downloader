@@ -1,35 +1,22 @@
 const express = require("express");
 const cors = require("cors");
-const downloadVideo = require("./download");
+
 const saveVideoRoute = require("./saveVideoRoute");
+const jobRoute = require("./jobRoute");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Legacy route (still works if you need it)
-app.post("/download", async (req, res) => {
-  try {
-    const { url } = req.body;
-
-    const result = await downloadVideo(url);
-
-    res.json(result);
-
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
-  }
-});
-
-// ✅ NEW LUMA ROUTE
+// start job
 app.use("/api/save-video", saveVideoRoute);
 
+// check job status
+app.use("/api/job", jobRoute);
+
 app.get("/", (req, res) => {
-  res.send("LUMA API running 🚀");
+  res.send("LUMA Job System Running 🚀");
 });
 
 const PORT = process.env.PORT || 3000;
