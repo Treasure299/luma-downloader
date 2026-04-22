@@ -22,21 +22,28 @@ function downloadVideo(url) {
       console.log("DOWNLOAD COMPLETE");
       console.log("FILE EXISTS:", fs.existsSync(filePath));
 
-      try {
-        const uploadResult = await uploadToR2(filePath, fileName);
+      // 🔥 FORCE WAIT BEFORE UPLOAD (important on Render)
+      setTimeout(async () => {
+        try {
+          console.log("STARTING R2 UPLOAD NOW...");
 
-        console.log("FINAL URL READY");
+          const uploadResult = await uploadToR2(filePath, fileName);
 
-        resolve({
-          success: true,
-          message: "Download + Upload completed",
-          videoUrl: uploadResult.url
-        });
+          console.log("UPLOAD DONE");
 
-      } catch (err) {
-        console.log("UPLOAD ERROR:", err);
-        reject(err);
-      }
+          resolve({
+            success: true,
+            message: "Download + Upload completed",
+            videoUrl: uploadResult.url
+          });
+
+        } catch (err) {
+          console.log("UPLOAD ERROR:", err);
+          reject(err);
+        }
+
+      }, 2000);
+
     });
 
   });
