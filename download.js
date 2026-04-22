@@ -1,37 +1,83 @@
 const { exec } = require("child_process");
+const fs = require("fs");
+const uploadToR2 = require("./r2");
 
-function downloadVideo(url) {
+/**
+ * Get real metadata from yt-dlp
+ */
+function getMetadata(url) {
   return new Promise((resolve, reject) => {
+    const command = `./yt-dlp -J "${url}"`;
 
-    if (!url) return reject(new Error("No URL provided"));
-
-    const fileName = `output-${Date.now()}.mp4`;
-
-    const command = `./yt-dlp -f best -o "${fileName}" "${url}"`;
-
-    exec(command, async (error, stdout, stderr) => {
-
+    exec(command, (error, stdout) => {
       if (error) {
-        console.error("YT-DLP ERROR:", error);
-        return reject(new Error(stderr || error.message));
+        return reject(new Error("Metadata extraction failed"));
       }
 
-      console.log("DOWNLOAD COMPLETE");
+      try {
+        const data = JSON.parse(stdout);
 
-      // IMPORTANT:
-      // This assumes your R2 upload already works in your existing code
-      // and returns a public URL.
+        resolve({
+          title: data.title,
+          thumbnail: data.thumbnail
+        });
 
-      const r2Url = `YOUR_R2_PUBLIC_URL/${fileName}`;
+      } catch (err) {
+        reject(new Error("Failed to parse metadata"));
+      }
+    });
+  });
+}
 
-      resolve({
-        success: true,
-        videoUrl: r2Url,
-        title: "Video Title (optional upgrade later)",
-        thumbnailUrl: null
+/**
+ * MAIN DOWNLOAD FUNCTION (SYNC FLOW)
+ */
+function downloadVideo(url) {
+  return new Promise(async (resolve, reject) => {
+
+    const fileName = `video-${Date.now()}.mp4`;
+
+    try {
+      console.log("STEP 1: FETCH METADATA");
+
+      const metadata = await getMetadata(url);
+
+      console.log("STEP 2: DOWNLOADING VIDEO");
+
+      const command = `./yt-dlp -f best -o "${fileName}" "${url}"`;
+
+      exec(command, async (error) => {
+
+        if (error) {
+          console.error("DOWNLOAD ERROR:", error);
+          return reject(new Error("Video download failed"));
+        }
+
+        console.log("STEP 3: UPLOADING TO R2");
+
+        if (!fs.existsSync(fileName)) {
+          return reject(new Error("File not found after download"));
+        }
+
+        const r2Url = await uploadToR2(fileName, fileName);
+
+        // cleanup local file
+        fs.unlinkSync(fileName);
+
+        console.log("STEP 4: DONE");
+
+        resolve({
+          success: true,
+          videoUrl: r2Url,
+          title: metadata.title || "Unknown Title",
+          thumbnailUrl: metadata.thumbnail || null
+        });
+
       });
 
-    });
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
