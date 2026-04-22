@@ -2,21 +2,17 @@ const express = require("express");
 const cors = require("cors");
 
 const saveVideoRoute = require("./saveVideoRoute");
-const jobRoute = require("./jobRoute");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// start job
+// MAIN LUMA ROUTE (SYNC)
 app.use("/api/save-video", saveVideoRoute);
 
-// check job status
-app.use("/api/job", jobRoute);
-
 app.get("/", (req, res) => {
-  res.send("LUMA Job System Running 🚀");
+  res.send("LUMA API running 🚀");
 });
 
 const PORT = process.env.PORT || 3000;
