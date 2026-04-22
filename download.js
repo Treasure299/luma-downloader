@@ -1,8 +1,8 @@
 const { exec } = require('child_process');
 const path = require('path');
-const r2 = require('./r2');
+const { uploadToR2 } = require('./r2');
 
-function downloadAndUpload(url) {
+async function downloadAndUpload(url) {
 return new Promise((resolve, reject) => {
 const filePath = path.join(__dirname, 'output.mp4');
 
@@ -18,7 +18,7 @@ exec(command, async (error, stdout, stderr) => {
   }
 
   try {
-    const fileUrl = await r2.uploadToR2(filePath);
+    const fileUrl = await uploadToR2(filePath);
 
     resolve({
       success: true,
@@ -34,4 +34,4 @@ exec(command, async (error, stdout, stderr) => {
 });
 }
 
-module.exports = { downloadAndUpload };
+module.exports = downloadAndUpload;
