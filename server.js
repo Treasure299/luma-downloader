@@ -13,22 +13,18 @@ app.post('/download', async (req, res) => {
 
     const { url } = req.body;
 
-    if (!url) {
-      return res.status(400).json({ error: 'No URL provided' });
-    }
-
     const result = await downloadVideo(url);
 
-    return res.json(result);
+    res.json(result);
 
   } catch (err) {
     console.error('SERVER ERROR:', err);
-    res.status(500).json({ error: err.message || err.toString() });
+    res.status(500).json({ error: err.message });
   }
 });
 
 app.get('/', (req, res) => {
-  res.send('Luma API is running 🚀');
+  res.send('Luma API running 🚀');
 });
 
 const PORT = process.env.PORT || 3000;
