@@ -1,37 +1,29 @@
 const { exec } = require('child_process');
 const path = require('path');
-const { uploadToR2 } = require('./r2');
+const fs = require('fs');
 
-async function downloadAndUpload(url) {
-return new Promise((resolve, reject) => {
-const filePath = path.join(__dirname, 'output.mp4');
+const downloadVideo = (url) => {
+  return new Promise((resolve, reject) => {
+    const filePath = path.join(__dirname, 'output.mp4');
 
-```
-const command =
-  './yt-dlp -f best -o "' + filePath + '" "' + url + '"';
+    const command = `./yt-dlp -f best -o "${filePath}" "${url}"`;
 
-exec(command, async (error, stdout, stderr) => {
-  if (error) {
-    console.error('YT-DLP ERROR:', error);
-    console.error(stderr);
-    return reject(new Error('Download failed'));
-  }
+    exec(command, (err, stdout, stderr) => {
+      if (err) {
+        console.error('YT-DLP ERROR:', err);
+        console.error('STDERR:', stderr);
+        return reject(new Error(stderr || err.message));
+      }
 
-  try {
-    const fileUrl = await uploadToR2(filePath);
+      console.log('YT-DLP OUTPUT:', stdout);
 
-    resolve({
-      success: true,
-      videoUrl: fileUrl,
+      resolve({
+        success: true,
+        message: 'Download completed',
+        videoUrl: 'TEMP_LOCAL_FILE', // we will replace this with R2 next
+      });
     });
-  } catch (uploadError) {
-    console.error('UPLOAD ERROR:', uploadError);
-    reject(new Error('Upload to R2 failed'));
-  }
-});
-```
+  });
+};
 
-});
-}
-
-module.exports = downloadAndUpload;
+module.exports = downloadVideo;
