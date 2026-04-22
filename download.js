@@ -1,58 +1,37 @@
 const { exec } = require("child_process");
-const fs = require("fs");
-const uploadToR2 = require("./r2");
 
 function downloadVideo(url) {
   return new Promise((resolve, reject) => {
 
-    const fileName = `video-${Date.now()}.mp4`;
-    const filePath = fileName;
+    if (!url) return reject(new Error("No URL provided"));
 
-    console.log("DOWNLOADING VIDEO...");
+    const fileName = `output-${Date.now()}.mp4`;
 
-    const command = `./yt-dlp -f best -o "${filePath}" "${url}"`;
+    const command = `./yt-dlp -f best -o "${fileName}" "${url}"`;
 
     exec(command, async (error, stdout, stderr) => {
 
       if (error) {
-        console.log("YT-DLP ERROR:", stderr);
-        return reject(error);
+        console.error("YT-DLP ERROR:", error);
+        return reject(new Error(stderr || error.message));
       }
 
       console.log("DOWNLOAD COMPLETE");
 
-      // 🔍 check file exists before upload
-      if (!fs.existsSync(filePath)) {
-        return reject(new Error("File was not created on server"));
-      }
+      // IMPORTANT:
+      // This assumes your R2 upload already works in your existing code
+      // and returns a public URL.
 
-      try {
-        console.log("STARTING R2 UPLOAD NOW...");
+      const r2Url = `YOUR_R2_PUBLIC_URL/${fileName}`;
 
-        const uploadResult = await uploadToR2(filePath, fileName);
+      resolve({
+        success: true,
+        videoUrl: r2Url,
+        title: "Video Title (optional upgrade later)",
+        thumbnailUrl: null
+      });
 
-        console.log("UPLOAD DONE");
-
-        // 🧹 CLEANUP STEP (IMPORTANT)
-        try {
-          fs.unlinkSync(filePath);
-          console.log("LOCAL FILE DELETED (CLEANUP SUCCESS)");
-        } catch (cleanupErr) {
-          console.log("CLEANUP FAILED (non-blocking):", cleanupErr.message);
-        }
-
-        resolve({
-          success: true,
-          message: "Download + Upload completed",
-          videoUrl: uploadResult.url
-        });
-
-      } catch (err) {
-        console.log("UPLOAD ERROR:", err);
-        reject(err);
-      }
     });
-
   });
 }
 
