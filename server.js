@@ -1,13 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-const { downloadAndUpload } = require('./download');
+const downloadAndUpload = require('./download');
 
 const app = express();
 
-// VERY IMPORTANT (force JSON parsing properly)
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true }));
-
+app.use(express.json());
 app.use(cors());
 
 // Health check
@@ -23,10 +20,8 @@ console.log('BODY RECEIVED:', req.body);
 ```
 const url = req.body.url;
 
-if (!url || typeof url !== 'string') {
-  return res.status(400).json({
-    error: 'Invalid or missing URL',
-  });
+if (!url) {
+  return res.status(400).json({ error: 'No URL provided' });
 }
 
 const result = await downloadAndUpload(url);
