@@ -2,6 +2,9 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const fs = require("fs");
 
 const accountId = process.env.R2_ACCOUNT_ID;
+const bucket = process.env.R2_BUCKET;
+
+console.log("R2_BUCKET LOADED:", bucket);
 
 const s3 = new S3Client({
   region: "auto",
@@ -15,10 +18,14 @@ const s3 = new S3Client({
 async function uploadToR2(filePath, fileName) {
   console.log("R2 UPLOAD STARTING...");
 
+  if (!bucket) {
+    throw new Error("R2_BUCKET is missing in environment variables");
+  }
+
   const fileStream = fs.createReadStream(filePath);
 
   const command = new PutObjectCommand({
-    Bucket: process.env.R2_BUCKET,
+    Bucket: bucket,
     Key: fileName,
     Body: fileStream,
     ContentType: "video/mp4",
