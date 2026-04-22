@@ -2,7 +2,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const fs = require("fs");
 
 const accountId = process.env.R2_ACCOUNT_ID;
-const bucket = process.env.R2_BUCKET;
+const bucket = process.env.R2_BUCKET_NAME; // ✅ FIXED HERE
 
 console.log("R2_BUCKET LOADED:", bucket);
 
@@ -19,7 +19,7 @@ async function uploadToR2(filePath, fileName) {
   console.log("R2 UPLOAD STARTING...");
 
   if (!bucket) {
-    throw new Error("R2_BUCKET is missing in environment variables");
+    throw new Error("R2_BUCKET_NAME is missing in environment variables");
   }
 
   const fileStream = fs.createReadStream(filePath);
